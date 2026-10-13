@@ -133,7 +133,7 @@ def evaluate_model(model, model_name, X_test, y_test):
 
     # Confusion Matrix
     cm = confusion_matrix(y_test, y_pred, labels=model.classes_)
-    
+
     return y_pred, cm, accuracy
 
 # Evaluate both models
