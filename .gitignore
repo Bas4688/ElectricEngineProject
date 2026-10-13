@@ -2,4 +2,8 @@
 *.zip
 
 # Python virtual environments
-.venv/
+.venv*/
+
+# Generated model and visualization files
+models/
+*.png
