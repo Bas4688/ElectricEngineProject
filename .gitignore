@@ -8,6 +8,9 @@
 .venv/
 .venv*/
 
+# Python cache files
+__pycache__/
+
 # Generated model and visualization files
 models/
 *.png
