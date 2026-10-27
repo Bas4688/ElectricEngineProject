@@ -5,9 +5,7 @@ For Electric Engine Condition Classification
 """
 # her all the necessary imports
 import pandas as pd
-import numpy as np
 from pathlib import Path
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -33,42 +31,47 @@ print("=" * 60)
 print(" STARTING BASIL'S MODEL PIPELINE")
 print("=" * 60)
 
-# Locate the CSV file in the project root.
+# Load the separate training and testing files.
 project_dir = Path(__file__).resolve().parent
-csv_path = project_dir / "train_cut_features.csv"
+train_csv_path = project_dir / "train_cut_features.csv"
+# to test the model on unseen data, we will use a separate test file
+test_csv_path = project_dir / "test_cut_features.csv"
 
-print(f"\n Loading data from: {csv_path}")
-df = pd.read_csv(csv_path)
-print(f" Dataset loaded: {df.shape[0]} rows, {df.shape[1]} columns")
+print(f"\n Loading training data from: {train_csv_path}")
+train_df = pd.read_csv(train_csv_path)
+print(f" Training dataset loaded: {train_df.shape[0]} rows, {train_df.shape[1]} columns")
 print(f"\n Class distribution:")
-print(df['class'].value_counts())
+print(train_df["class"].value_counts())
+
+print(f"\n Loading separate test data from: {test_csv_path}")
+test_df = pd.read_csv(test_csv_path)
+print(f" Test dataset loaded: {test_df.shape[0]} rows, {test_df.shape[1]} columns")
 
 # ============================================================
 # 2. DATA PREPARATION
 # ============================================================
-# Features (X) and Target (y)
-# Dropping 'file' column as it is not a predictive feature
-X = df.drop(columns=['class', 'file'])
-y = df['class']
-
-print(f"\n Features: {list(X.columns)}")
-print(f" Target classes: {list(y.unique())}")
+# Keep the test file completely separate from training.
+feature_columns = [
+    column for column in train_df.columns if column not in {"class", "file"}
+]
+if feature_columns != [
+    column for column in test_df.columns if column not in {"class", "file"}
+]:
+   raise ValueError("Training and test files must contain the same feature columns.")
 
 # ============================================================
-# 3. DATA SEGREGATION (Train/Test Split)
+# 3. DATA SEGREGATION
 # ============================================================
-# 80% training, 20% testing
-# stratify=y ensures equal class distribution in both sets
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
-)
+X_train = train_df[feature_columns]
+y_train = train_df["class"]
+X_test = test_df[feature_columns]
+y_test = test_df["class"]
 
 print(f"\n  Data split:")
-print(f"   Training data: {X_train.shape[0]} rows")
-print(f"   Test data:     {X_test.shape[0]} rows")
+print(f"   Training data: {X_train.shape[0]} rows from train_cut_features.csv")
+print(f"   Test data:     {X_test.shape[0]} rows from test_cut_features.csv")
+print(f"\n Features: {feature_columns}")
+print(f" Target classes: {list(y_train.unique())}")
 
 # ============================================================
 # 4. FEATURE SCALING (Crucial for SVM!)
@@ -187,7 +190,7 @@ else:
 # Decision-tree feature importance
 feature_importance = pd.Series(
     dt_model.feature_importances_,
-    index=X.columns,
+    index=feature_columns,
 ).sort_values(ascending=False)
 
 print("\n Decision Tree feature importance:")
@@ -230,7 +233,7 @@ print(f"\n✨ Best model: {best_model}")
 print("\n" + "=" * 60)
 print(" SAVING MODELS")
 print("=" * 60)
-
+## here we save the trained models and scaler for future use
 models_dir = project_dir / "models"
 models_dir.mkdir(exist_ok=True)
 
